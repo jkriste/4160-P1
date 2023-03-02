@@ -10,14 +10,12 @@ from engine.entity.entity import EntityHandler
 from engine.event.events import EventHandler
 from engine.window.resolution import Resolutions, Resolution
 
-BLACK = Color(0, 0, 0)
-
 
 class Window:
 
     def __init__(self, res: Union[Resolutions, Resolution],
                  *,
-                 bg: Color = BLACK,
+                 bg: Color = Color(0),
                  title: str = "PyGame",
                  fps: int = 30) -> None:
         self.res = res.value if isinstance(res, Resolutions) else res

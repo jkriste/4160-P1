@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Union
 
+import pygame.event
 from pygame import Rect
 from pygame.surface import Surface
 
@@ -17,7 +18,7 @@ class Entity(ABC):
     def __init__(self, loc: Location = Location(0, 0), priority: Union[int, RenderPriority, Priority] = 10) -> None:
         self._loc = loc
         self._loaded = False
-        self.visible = False
+        self._visible = False
         self._removed = False
         self._should_remove = False
         if isinstance(priority, RenderPriority | Priority):
@@ -99,13 +100,21 @@ class Entity(ABC):
         else:
             self._priority = RenderPriority(priority)
 
+    @property
+    def visible(self) -> bool:
+        return self._visible
+
+    @visible.setter
+    def visible(self, value: bool) -> None:
+        self._visible = value
+
     def should_draw(self) -> bool:
         """
         Checks if the Entity should be drawn to the Surface.
 
         :return: True if the Entity should be drawn to the Window, False otherwise.
         """
-        return self.visible and not self._removed and self._loaded
+        return self._visible and not self._removed and self._loaded
 
     def should_remove(self) -> bool:
         """
@@ -137,7 +146,7 @@ class Entity(ABC):
         """
         if self._removed or not self._loaded:
             raise EntityError(f"Tried to remove already-removed and/or unloaded entity '{type(self).__name__}'.")
-        self.visible = False
+        self._visible = False
         self._removed = True
         self._loaded = False
         print(f"Entity '{type(self).__name__}' removed.")
@@ -152,7 +161,7 @@ class Entity(ABC):
         if not self._loaded:
             self.on_load()
             self._loaded = True
-            self.visible = True
+            self._visible = True
 
     def clicked_on(self, mouse_pos: tuple[int, int]) -> bool:
         """
@@ -180,6 +189,7 @@ class EntityHandler:
 
     def __init__(self):
         self._entities: dict[int, list[Entity]] = {}
+        self._collision_listeners: list[CollisionListener] = []
 
     def tick(self, tick_count: int) -> None:
         """
@@ -191,8 +201,12 @@ class EntityHandler:
         :param tick_count: The current tick count.
         :return: None.
         """
+        for listener in self._collision_listeners:
+            listener.collision_check()
+
         if self._check_dirty():
             self._clean()
+
         for _, entity_list in self._entities.items():
             for entity in entity_list:
                 if entity.should_remove():
@@ -261,18 +275,28 @@ class EntityHandler:
 
     def remove_all(self) -> None:
         """
+        Removes all registered entities, regardless if they're marked for disposal.
 
-
-        :return:
+        :return: None.
         """
         for _, entity_list in self._entities.items():
             for entity in entity_list:
                 entity.remove()
 
     def clear(self) -> None:
+        """
+        Clears all entities. Does not call `Entity.dispose()` or `Entity.remove()`.
+
+        :return: None.
+        """
         self._entities.clear()
 
     def _check_dirty(self) -> bool:
+        """
+        Checks if any of the registered entities have been changed since last tick.
+
+        :return: True if a registered entity has been changed since last tick, false otherwise.
+        """
         for _, entities in self._entities.items():
             for entity in entities:
                 if entity.priority.dirty:
@@ -280,6 +304,11 @@ class EntityHandler:
         return False
 
     def _clean(self) -> None:
+        """
+        Reorganizes any dirty entities.
+
+        :return: None.
+        """
         dirty = []
         for _, entities in self._entities.items():
             for entity in entities:
@@ -291,6 +320,22 @@ class EntityHandler:
             entity_list.append(entity)
             self._entities[entity.priority.priority] = entity_list
             entity.priority.clean()
+
+    def listen(self, entity: Entity, collides_with: list[Entity], event_id: int) -> None:
+        self._collision_listeners.append(CollisionListener(entity, collides_with, event_id))
+
+
+class CollisionListener:
+
+    def __init__(self, entity: Entity, collides_with: list[Entity], event_id: int):
+        self._entity = entity
+        self._collides_with = collides_with
+        self._event_id = event_id
+
+    def collision_check(self) -> None:
+        for entity in self._collides_with:
+            if entity.collides_with(self._entity):
+                pygame.event.post(pygame.event.Event(self._event_id))
 
 
 class EntityError(Exception):

@@ -50,3 +50,11 @@ class String(Entity):
         y = loc.y if isinstance(loc, Location) else loc[1]
         self._surface.get_rect().x = x
         self._surface.get_rect().y = y
+
+    @property
+    def color(self) -> Color:
+        return self._color
+
+    @color.setter
+    def color(self, value: Color) -> None:
+        self._color = value

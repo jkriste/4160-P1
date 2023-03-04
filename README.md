@@ -21,13 +21,24 @@ The way I have the engine structured, it uses object-oriented programming ideolo
 
 ## Image
 
-I honestly could not get the PyCharm UML Diagram to work without including non-project files.
+#### Entity Package Diagram
+![entity diagram](https://i.imgur.com/BhtOUHS.jpeg)
+
+#### Events Package Diagram
+![events diagram](https://i.imgur.com/gcsiNTT.png)
+
+#### Window Package Diagram
+![window diagram](https://i.imgur.com/B6kKPFL.png)
+
+#### Game Package Diagram
+![game diagram](https://i.imgur.com/0W8E6yT.png)
 
 ## Future Work
 
 Enhancements that can be made:
 - Better integrated classes. For example, the difference between `Resolutions` and `Resolution` is that `Resolutions` is just an enum of `Resolution`s, but have compatibility issues.
 - Better event handling. My main game code is a tad messy.
+- Pymunk is listed as a requirement, even though the dependency is not used in this game.
 
 Generalizations:
 With my engine, possible genre(s) of games that could be made include, but are not limited to:
